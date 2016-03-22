@@ -1,0 +1,62 @@
+- name: Add repository EPEL
+  yum:
+    name: https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+
+- name: Install epel-release
+  yum:
+    name: epel-release
+    state: latest
+
+- name: Install PHP 7.0
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+  - php70w
+  - php70w-fpm
+  - php70w-opcache
+  - php70w-mysql
+
+
+- name: Fix listen.owner for php-fpm
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^listen.owner\s*=.*$'
+    line: "listen.owner=nginx"
+    state: present
+  notify: restart php-fpm
+
+- name: Fix listen.group for php-fpm
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^listen.group\s*=.*$'
+    line: "listen.group=nginx"
+    state: present
+  notify: restart php-fpm
+
+# - name: fix user for php-fpm
+#   lineinfile:
+#     dest: /etc/php-fpm.d/www.conf
+#     regexp: '^user\s*=.*$'
+#     line: "user=nginx"
+#     state: present
+#   notify: restart php-fpm
+
+# - name: fix group for php-fpm
+#   lineinfile:
+#     dest: /etc/php-fpm.d/www.conf
+#     regexp: '^group\s*=.*$'
+#     line: "group=nginx"
+#     state: present
+#   notify: restart php-fpm
+
+- name: Change listen for php-fpm
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^listen\s*=.*$'
+    line: "listen=/var/run/php-fpm.sock"
+    state: present
+  notify: restart php-fpm
+
+- name: Ensure service is started and that it always starts on boot
+  service: name=php-fpm state=started enabled=yes
